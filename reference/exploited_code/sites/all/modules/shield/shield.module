@@ -1,0 +1,61 @@
+<?php
+/**
+ * @file
+ * Functions for shield module
+ */
+
+/**
+ * Implements hook_perm().
+ */
+function shield_permission() {
+  return array(
+    'administer shield' => array(
+      'title' => t('Administer shield module'),
+      'description' => t('Perform administration tasks for shield module.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function shield_menu() {
+  $items['admin/config/system/shield'] = array(
+    'title' => 'Shield',
+    'description' => 'Manage the settings of PHP Authentication shield.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('shield_admin_settings'),
+    'weight' => 10,
+    'access arguments' => array('administer shield'),
+    'file' => 'shield.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_boot().
+ */
+function shield_boot() {
+  $user = variable_get('shield_user', '');
+  if (!$user) {
+    return;
+  }
+
+  // allow Drush to bypass Shield
+  if (drupal_is_cli() && variable_get('shield_allow_cli', 1) == 1) {
+    return;
+  }
+
+  $pass = variable_get('shield_pass', '');
+  if (!empty($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])
+      && $_SERVER['PHP_AUTH_USER'] == $user
+      && $_SERVER['PHP_AUTH_PW']   == $pass) {
+    return;
+  }
+
+  $print = variable_get('shield_print', 'Hello, user: [user], pass: [pass]!');
+  header(sprintf('WWW-Authenticate: Basic realm="%s"', strtr($print, array('[user]' => $user, '[pass]' => $pass))));
+  header('HTTP/1.0 401 Unauthorized');
+  exit;
+}

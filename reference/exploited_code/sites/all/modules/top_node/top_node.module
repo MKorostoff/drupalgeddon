@@ -1,0 +1,17 @@
+<?php
+// $Id: top_node.module,v 1.1.4.1.2.1 2011/01/07 00:57:49 eaton Exp $
+
+/**
+ * @file
+ * Provides a Views Display that shows a single node page, complete with comment
+ * listings and comment form (if the node type is appropriately configured).
+ */
+
+/**
+ *  Implementation of hook_views_api().
+ */
+function top_node_views_api() {
+  return array(
+    'api' => 2.0,
+  );
+}

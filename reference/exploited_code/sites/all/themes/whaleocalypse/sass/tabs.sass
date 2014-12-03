@@ -1,0 +1,92 @@
+/* Tabs CSS
+   --------
+   Adds styles for the primary and secondary tabs.
+
+   Compare this with default CSS found in the system module's stylesheet (a copy
+   of which is in drupal5-reference.css, line 510.)
+
+div.tabs
+  margin: 0 0 5px 0
+
+ul.primary, ul.secondary
+  width: 99%
+
+ul.primary
+  margin: 0
+  padding: 0 0 0 10px
+  border-width: 0
+  list-style: none
+  white-space: nowrap
+  line-height: normal
+  background: url(../images/tabs/tab-bar.png) repeat-x left bottom
+  li
+    float: left
+    margin: 0
+    padding: 0
+    &.active
+      a, a:hover
+        border-width: 0
+        color: black
+        background-color: transparent
+        background: url(../images/tabs/tab-left.png) no-repeat left 0
+        .tab
+          background: url(../images/tabs/tab-right.png) no-repeat right 0
+    a
+      display: block
+      height: 24px
+      margin: 0
+      padding: 0 0 0 5px
+      border-width: 0
+      font-weight: bold
+      text-decoration: none
+      color: #777777
+      background-color: transparent
+      background: url(../images/tabs/tab-left.png) no-repeat left -38px
+      &:hover
+        border-width: 0
+        background-color: transparent
+        background: url(../images/tabs/tab-left.png) no-repeat left -76px
+        .tab
+          background: url(../images/tabs/tab-right.png) no-repeat right -76px
+      .tab
+        display: block
+        height: 20px
+        margin: 0
+        padding: 4px 13px 0 6px
+        border-width: 0
+        line-height: 20px
+        background: url(../images/tabs/tab-right.png) no-repeat right -38px
+
+ul.secondary
+  margin: 0
+  padding: 0 0 0 5px
+  border-bottom: 1px solid silver
+  list-style: none
+  white-space: nowrap
+  background: url(../images/tabs/tab-secondary-bg.png) repeat-x left bottom
+  li
+    float: left
+    margin: 0 5px 0 0
+    padding: 5px 0
+    border-right: none
+  a
+    display: block
+    height: 24px
+    margin: 0
+    padding: 0
+    border: 1px solid silver
+    text-decoration: none
+    color: #777777
+    background: url(../images/tabs/tab-secondary.png) repeat-x left -56px
+    .active, .active:hover
+      border: 1px solid silver
+      color: black
+      background: url(../images/tabs/tab-secondary.png) repeat-x left top
+    &:hover
+      background: url(../images/tabs/tab-secondary.png) repeat-x left bottom
+    .tab
+      display: block
+      height: 18px
+      margin: 0
+      padding: 3px 8px
+      line-height: 18px

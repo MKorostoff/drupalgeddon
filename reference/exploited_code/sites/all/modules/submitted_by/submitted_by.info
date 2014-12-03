@@ -1,0 +1,12 @@
+name = Submitted By
+description = Customize the Submitted by text on a per-node-type basis.
+dependencies[] = token
+dependencies[] = field
+core = 7.x
+
+; Information added by Drupal.org packaging script on 2014-08-17
+version = "7.x-1.0-beta1"
+core = "7.x"
+project = "submitted_by"
+datestamp = "1408309729"
+

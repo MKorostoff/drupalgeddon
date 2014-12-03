@@ -1,0 +1,15 @@
+name = AntiSpam
+description = Use the anti-spam service to protect your site from spam
+configure = admin/config/antispam
+core = 7.x
+files[] = antispam.module
+files[] = antispam.admin.inc
+files[] = antispam.cron.inc
+files[] = antispam.install
+
+; Information added by drupal.org packaging script on 2012-07-09
+version = "7.x-1.5"
+core = "7.x"
+project = "antispam"
+datestamp = "1341813076"
+

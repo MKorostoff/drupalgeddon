@@ -1,0 +1,10 @@
+<?php
+function whaleocalypse_blocks_block_info() {
+	// This example comes from node.module.
+	$blocks['About'] = array(
+		'info' => t( 'Syndicate' ),
+	);
+
+	return $blocks;
+}
+?>

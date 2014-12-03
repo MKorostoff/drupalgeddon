@@ -1,0 +1,12 @@
+name = Redirect Import
+description = Provides the ability to import redirects for the Redirect module
+core = 7.x
+dependencies[] = redirect
+files[] = tests/path_redirect_import.test
+
+; Information added by drupal.org packaging script on 2013-03-26
+version = "7.x-1.0-rc4"
+core = "7.x"
+project = "path_redirect_import"
+datestamp = "1364285423"
+

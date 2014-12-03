@@ -1,0 +1,371 @@
+<?php
+
+/**
+ * @file
+ * WordPress migration module installation
+ */
+
+function wordpress_migrate_schema() {
+  $schema = array();
+  $schema['wordpress_migrate'] = wordpress_migrate_schema_wordpress();
+  $schema['wordpress_migrate_attachment'] = wordpress_migrate_schema_attachment();
+  $schema['wordpress_migrate_linked_authors'] = wordpress_migrate_schema_linked_authors();
+  return $schema;
+}
+
+function wordpress_migrate_schema_wordpress() {
+  return array(
+    'description' => 'Mapping of machine name to filename for WordPress migrations',
+    'fields' => array(
+      'blog_id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Unique blog ID',
+      ),
+      'filename' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'Filename of XML imported by this migration',
+      ),
+      'title' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'Blog title (used to seed machine name)',
+      ),
+      'blog_url' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'Original blog URL',
+      ),
+      'link' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'Link value from XML',
+      ),
+      'uid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => "User ID of the account initiating the import",
+      ),
+      'wxr_version' => array(
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => TRUE,
+        'default' => '1.1',
+        'description' => 'WXR version of the imported file',
+      ),
+    ),
+    'primary key' => array('blog_id'),
+    'unique keys' => array(
+      'blog_url' => array('blog_url'),
+    ),
+  );
+}
+
+function wordpress_migrate_schema_attachment() {
+  return array(
+    'description' => 'Map original attachment URL to Drupal URI',
+    'fields' => array(
+      'blog_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'ID of parent blog',
+      ),
+      'original_url' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'URL of attachment on WordPress',
+      ),
+      'new_uri' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'URI of attachment on Drupal',
+      ),
+      'new_fid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'description' => 'File ID of the attachment',
+      ),
+      'parent_nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'description' => 'Drupal ID of the node this is attached to',
+      ),
+    ),
+    'primary key' => array('blog_id', 'original_url'),
+  );
+}
+
+function wordpress_migrate_schema_linked_authors() {
+  return array(
+    'description' => 'Track pre-existing user accounts',
+    'fields' => array(
+      'mail' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'Email address of user account already in Drupal',
+      ),
+      'uid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => "User ID of the account in Drupal",
+      ),
+    ),
+    'primary key' => array('mail'),
+  );
+}
+
+/**
+ * Implements hook_requirements().
+ *
+ * @param $phase
+ *
+ * @return array
+ */
+function wordpress_migrate_requirements($phase) {
+  $requirements = array();
+  // Make sure the XMLReader extension is available.
+  if (!extension_loaded('xmlreader')) {
+    $t = get_t();
+    $requirements['xmlreader']['severity'] = REQUIREMENT_ERROR;
+    $requirements['xmlreader']['title'] = $t('XMLReader extension');
+    $requirements['xmlreader']['description'] =
+      $t('WordPress Migrate requires the PHP XMLReader extension.');
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function wordpress_migrate_uninstall() {
+  variable_del('wordpress_migrate_attachment_field');
+  variable_del('wordpress_migrate_category_vocabulary');
+  variable_del('wordpress_migrate_generate_redirects');
+  variable_del('wordpress_migrate_import_method');
+  variable_del('wordpress_migrate_notification');
+  variable_del('wordpress_migrate_notification_body');
+  variable_del('wordpress_migrate_notification_failure_body');
+  variable_del('wordpress_migrate_notification_subject');
+  variable_del('wordpress_migrate_page_type');
+  variable_del('wordpress_migrate_path_action');
+  variable_del('wordpress_migrate_podcast_field');
+  variable_del('wordpress_migrate_post_type');
+  variable_del('wordpress_migrate_tag_vocabulary');
+  variable_del('wordpress_migrate_text_format');
+  variable_del('wordpress_migrate_text_format_comment');
+}
+
+/**
+ * Add uid field to wordpress_migrate table.
+ */
+function wordpress_migrate_update_7001() {
+  db_add_field('wordpress_migrate', 'uid', array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => "User ID of the account initiating the import",
+      )
+  );
+
+  return t('Added uid column to wordpress_migrate table');
+}
+
+/**
+ * Add the wordpress_migrate_attachment table.
+ */
+function wordpress_migrate_update_7002() {
+  db_create_table('wordpress_migrate_attachment', wordpress_migrate_schema_attachment());
+  return t('Added the wordpress_migrate_attachment table');
+}
+
+/**
+ * Add blog_url field to wordpress_migrate table.
+ */
+function wordpress_migrate_update_7003() {
+  db_add_field('wordpress_migrate', 'blog_url', array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'Original blog URL',
+      )
+  );
+
+  return t('Added blog_url column to wordpress_migrate table');
+}
+
+/**
+ * Add link field to wordpress_migrate table.
+ */
+function wordpress_migrate_update_7004() {
+  if (!db_field_exists('wordpress_migrate', 'link')) {
+    db_add_field('wordpress_migrate', 'link', array(
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+          'description' => 'Link value from XML',
+        )
+    );
+  }
+
+  return t('Added link column to wordpress_migrate table');
+}
+
+/**
+ * Fix any malformed YouTube embeds.
+ */
+function wordpress_migrate_update_7005() {
+  $results = db_select('file_managed', 'f')
+    ->fields('f', array('fid', 'uri'))
+    ->condition(db_or()
+      ->condition('f.uri', 'youtube://%?%', 'LIKE')
+      ->condition('f.uri', 'youtube://%&%', 'LIKE')
+    )
+    ->execute();
+  foreach ($results as $result) {
+    $original = $result->uri;
+    preg_match('@(youtube://[^\?\&]+)@i', $result->uri, $matches);
+    $result->uri = $matches[1];
+    list(,,,$result->filename) = explode('/', $result->uri);
+    $check_for_duplicates = db_select('file_managed', 'f')
+      ->fields('f', array('fid', 'uri'))
+      ->condition('f.uri', $result->uri)
+      ->execute()
+      ->fetchObject();
+    if (!$check_for_duplicates) {
+      drupal_write_record('file_managed', $result, 'fid');
+    }
+    else {
+      // The uri column is unique. Throw an error, but run through the rest first.
+      if (!isset($errors)) {
+        $errors = array($original, $result, $check_for_duplicates);
+      }
+    }
+  }
+  if (isset($errors)) {
+    throw new DrupalUpdateException(t('Unable to fix uri: @media_1 (fid: @fid_1), as it conflicts with uri: @media_2 (fid: @fid_2).', array('@media_1' => $errors[0], '@media_2' => $errors[2]->uri, '@fid_1' => $errors[1]->fid, '@fid_2' => $errors[2]->fid)));
+  }
+  return t('Fixed all malformed YouTube embeds.');
+}
+
+/**
+ * Add the wordpress_migrate_attachment table and wxr_version column..
+ */
+function wordpress_migrate_update_7006() {
+  if (!db_field_exists('wordpress_migrate', 'wxr_version')) {
+    db_add_field('wordpress_migrate', 'wxr_version', array(
+                      'type' => 'varchar',
+                      'length' => 10,
+                      'not null' => TRUE,
+                      'default' => '1.1',
+                      'description' => 'WXR version of the imported file',
+        )
+    );
+  }
+  if (!db_table_exists('wordpress_migrate_linked_authors')) {
+    db_create_table('wordpress_migrate_linked_authors',
+                    wordpress_migrate_schema_linked_authors());
+  }
+  return t('Added the wordpress_migrate_linked_authors table and wxr_version column');
+}
+
+/**
+ * Key blogs with a serial field; add parent_nid tracking for attachments.
+ */
+function wordpress_migrate_update_7007() {
+  // Add a serial ID field to be the PK for blogs
+  if (!db_field_exists('wordpress_migrate', 'blog_id')) {
+    db_drop_primary_key('wordpress_migrate');
+    db_add_field('wordpress_migrate', 'blog_id', array(
+                   'type' => 'serial',
+                   'not null' => TRUE,
+                   'description' => 'Unique blog ID',
+                  ),
+                 array('primary key' => array('blog_id'))
+    );
+    db_add_unique_key('wordpress_migrate', 'blog_url',
+      array('blog_url'));
+  }
+  // Attachments now will reference the integer ID instead of the filename.
+  if (!db_field_exists('wordpress_migrate_attachment', 'blog_id')) {
+    db_add_field('wordpress_migrate_attachment', 'blog_id', array(
+                    'type' => 'int',
+                    'unsigned' => TRUE,
+                    'not null' => TRUE,
+                    'default' => 0,
+                    'description' => 'ID of parent blog',
+                  )
+    );
+    $query = db_select('wordpress_migrate_attachment', 'a')
+             ->fields('a', array('filename'));
+    $query->innerJoin('wordpress_migrate', 'wm', 'a.filename=wm.filename');
+    $result = $query->fields('wm', array('blog_id'))
+              ->execute();
+    foreach ($result as $row) {
+      db_update('wordpress_migrate_attachment')
+        ->fields(array('blog_id' => $row->blog_id))
+        ->condition('filename', $row->filename)
+        ->execute();
+    }
+    db_drop_primary_key('wordpress_migrate_attachment');
+    db_drop_field('wordpress_migrate_attachment', 'filename');
+    db_add_primary_key('wordpress_migrate_attachment',
+      array('blog_id', 'original_url'));
+  }
+  // Track the attachment parent nodes
+  if (!db_field_exists('wordpress_migrate_attachment', 'parent_nid')) {
+    db_add_field('wordpress_migrate_attachment', 'parent_nid', array(
+                    'type' => 'int',
+                    'unsigned' => TRUE,
+                    'not null' => FALSE,
+                    'description' => 'ID of parent blog',
+                  )
+    );
+  }
+  return t('Added blog_id key, parent node tracking for attachments.');
+}
+
+/**
+ * Track the fid of each attachment, for rewriting to media tags.
+ */
+function wordpress_migrate_update_7008() {
+  if (!db_field_exists('wordpress_migrate_attachment', 'new_fid')) {
+    db_add_field('wordpress_migrate_attachment', 'new_fid', array(
+                    'type' => 'int',
+                    'unsigned' => TRUE,
+                    'not null' => FALSE,
+                    'description' => 'File ID of the attachment',
+                  )
+    );
+  }
+}
+
+/**
+ * Reset default import method to Immediate.
+ */
+function wordpress_migrate_update_7009() {
+  variable_set('wordpress_migrate_import_method', 0);
+}
+
+/**
+ * Fix blog_url index name to make sense.
+ */
+function wordpress_migrate_update_7010() {
+  if (db_index_exists('wordpress_migrate', 'filename')) {
+    db_drop_index('wordpress_migrate', 'filename');
+    db_add_unique_key('wordpress_migrate', 'blog_url', array('blog_url'));
+  }
+}

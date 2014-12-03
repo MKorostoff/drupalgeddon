@@ -1,0 +1,20 @@
+;$Id: top_node.info,v 1.1.4.1.2.1 2011/01/07 00:57:49 eaton Exp $
+name = Top node
+description = Provides a Views Display that shows a single node page, complete with comments and comment form.
+dependencies[] = views
+package = Views
+core = 7.x
+
+files[] = top_node.module
+files[] = top_node.views.inc
+files[] = top_node.views_default.inc
+files[] = top_node_plugin_display_single_node_page.inc
+files[] = top_node_plugin_style_full_node.inc
+
+
+; Information added by drupal.org packaging script on 2011-01-07
+version = "7.x-2.0"
+core = "7.x"
+project = "top_node"
+datestamp = "1294362229"
+

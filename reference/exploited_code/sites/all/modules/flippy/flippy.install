@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * @file
+ * Flippy install file.
+ */
+
+/**
+ * Remove the internal caching feature, as Views now supports caching of query results.
+ */
+function flippy_uninstall() {
+  // We should delete variables and stuff and things.
+  db_delete('variable')
+    ->condition('name', db_like('flippy_') . '%', 'LIKE')
+    ->execute();
+  cache_clear_all('variables', 'cache_bootstrap');
+}

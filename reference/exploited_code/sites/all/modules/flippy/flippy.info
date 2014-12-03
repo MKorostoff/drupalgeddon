@@ -1,0 +1,15 @@
+name = Flippy
+core = 7.x
+description = Allows administrators to define custom pagers for navigation in lists of nodes.
+dependencies[] = token
+
+files[] = flippy.tpl.php
+files[] = flippy.install
+files[] = flippy.module
+
+; Information added by Drupal.org packaging script on 2014-03-19
+version = "7.x-1.3"
+core = "7.x"
+project = "flippy"
+datestamp = "1395200058"
+

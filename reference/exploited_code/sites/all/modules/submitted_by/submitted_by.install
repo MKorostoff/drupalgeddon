@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the Submitted By module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function submitted_by_uninstall() {
+  // Remove any variables that we have set.
+  foreach (node_type_get_names() as $type => $name) {
+    variable_del('submitted_by_' . $type);
+    variable_del('submitted_by_comment_node_' . $type);
+  }
+}

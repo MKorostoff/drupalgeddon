@@ -1,0 +1,105 @@
+<?php
+
+define('WORDPRESS_MIGRATE_ACCESS_MIGRATE', 'migrate wordpress blogs');
+
+/**
+ * @file
+ * API and drush commands to support migration of data from WordPress
+ * into a Drupal installation.
+ */
+
+/**
+ * Implements hook_permission().
+ */
+function wordpress_migrate_permission() {
+  return array(
+    WORDPRESS_MIGRATE_ACCESS_MIGRATE => array(
+      'title' => t('Migrate WordPress blogs into Drupal'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function wordpress_migrate_menu() {
+  $items = array();
+
+  $items['admin/content/wordpress'] = array(
+    'title' => 'WordPress migration',
+    'type' => MENU_LOCAL_TASK | MENU_NORMAL_ITEM,
+    'description' => 'Migrate WordPress content into Drupal',
+    'page callback' => 'wordpress_migrate_import',
+    'access arguments' => array(WORDPRESS_MIGRATE_ACCESS_MIGRATE),
+    'file' => 'wordpress_migrate.pages.inc',
+    'weight' => 10,
+  );
+  $items['admin/content/wordpress/import'] = array(
+    'title' => 'Import',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['admin/content/wordpress/review'] = array(
+    'title' => 'Imported blogs',
+    'type' => MENU_LOCAL_TASK,
+    'description' => 'Review and manage imported WordPress blogs',
+    'page callback' => 'wordpress_migrate_review',
+    'access arguments' => array(WORDPRESS_MIGRATE_ACCESS_MIGRATE),
+    'file' => 'wordpress_migrate.pages.inc',
+    'weight' => 0,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_stream_wrappers().
+ */
+function wordpress_migrate_stream_wrappers() {
+  $wrappers = array(
+    'wordpress' => array(
+      'name' => t('Uploaded wordpress files'),
+      'class' => 'WordpressMigrateStreamWrapper',
+      'description' => t('Uploaded WordPress WXR dumps for import - not to be seen by the world.'),
+      'type' => STREAM_WRAPPERS_LOCAL_HIDDEN,
+    )
+  );
+
+  return $wrappers;
+}
+
+/**
+ * Implementation of hook_mail().
+ *
+ * @param $key
+ * @param $message
+ * @param $params
+ */
+function wordpress_migrate_mail($key, &$message, $params) {
+  $data['user'] = $params['account'];
+  $options['language'] = $message['language'];
+  $variables = array();
+  user_mail_tokens($variables, $data, $options);
+  $variables['!output'] = $params['output'];
+  $langcode = $message['language']->language;
+  $subject = variable_get('wordpress_migrate_notification_subject', '');
+  $message['subject'] = t($subject, $variables, array('langcode' => $langcode));
+  switch ($key) {
+    case 'import_complete':
+      $body = variable_get('wordpress_migrate_notification_body', '');
+      break;
+    case 'import_failure':
+      $body = variable_get('wordpress_migrate_notification_failure_body', '');
+      break;
+  }
+  $message['body'][] = t($body, $variables, array('langcode' => $langcode));
+}
+
+function wordpress_migrate_blog_class() {
+  return variable_get('wordpress_migrate_blog_class', 'WordPressBlog');
+}
+
+function wordpress_migrate_blog($filename) {
+  $blog_class = wordpress_migrate_blog_class();
+  return new $blog_class($filename);
+}

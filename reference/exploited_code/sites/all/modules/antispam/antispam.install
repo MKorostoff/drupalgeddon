@@ -1,0 +1,148 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function antispam_schema() {
+  $schema['antispam_spam_marks'] = array(
+    'fields' => array(
+      'content_type' => array(
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'content_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'spam_created' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'hostname' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'mail' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'signature' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'spaminess' => array(
+        'type' => 'float',
+        'not null' => FALSE,
+        'default' => 1,
+      ),
+      'judge' => array(
+        'type' => 'varchar',
+        'length' => 40,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+    ),
+    'unique key' => array(
+      'content' => array('content_type', 'content_id'),
+    ),
+    'indexes' => array(
+      'spam_created' => array('spam_created'),
+      'hostname' => array('hostname'),
+      'mail' => array('mail'),
+    ),
+  );
+  $schema['antispam_moderator'] = array(
+    'fields' => array(
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'email_for' => array(
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('uid'),
+    'indexes' => array(
+      'email_for' => array('email_for'),
+    ),
+  );
+  $schema['antispam_counter'] = array(
+    'fields' => array(
+      'id' => array(
+        'description' => 'The record ID (unique number)',
+        'type' => 'serial', // start from 1
+        'unsigned' => FALSE,
+        'not null' => TRUE,
+      ),
+      'date' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'provider' => array(
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'spam_detected' => array(
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'not null' => FALSE,
+        'default' => 0,
+      ),
+      'ham_detected' => array(
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'not null' => FALSE,
+        'default' => 0,
+      ),
+      'false_negative' => array(
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'not null' => FALSE,
+        'default' => 0,
+      ),
+      'false_positive' => array(
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'not null' => FALSE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function antispam_install() {
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function antispam_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE 'antispam%'");
+  cache_clear_all('variables', 'cache');
+}

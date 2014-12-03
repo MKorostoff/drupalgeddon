@@ -1,0 +1,3 @@
+test1,<front>
+test2?drupal=god,http://drupal.org/project/path_redirect_import,
+test3?redirect=true#path_redirect_import,node/1

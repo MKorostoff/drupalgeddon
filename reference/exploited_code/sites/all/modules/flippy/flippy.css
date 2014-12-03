@@ -1,0 +1,25 @@
+.region-content ul.flippy {
+  margin: auto;
+  padding: 0px 20px;
+  text-align: center;
+}
+
+ul.flippy li {
+  margin: 0;
+  padding: 10px;
+  display: inline;
+  width: auto;
+  list-style-type: none;
+  list-style-image: none;
+  background: none;
+  white-space: nowrap;
+}
+
+.flippy li.first.empty, .flippy li.last.empty {
+  display: none;
+}
+
+.flippy li.previous.empty, .flippy li.next.empty {
+  color: LightGrey;
+}
+

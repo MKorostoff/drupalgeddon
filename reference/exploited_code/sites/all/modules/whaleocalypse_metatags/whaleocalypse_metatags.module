@@ -1,0 +1,48 @@
+<?php
+/**
+ * Implements hook_metatag_config_default_alter().
+ * 
+ * On the homepage only, we need to fix the value for "og:description".  It
+ * should be the 'body' field of the most recent comic, and fallback to the
+ * site slogan.
+ */
+function whaleocalypse_metatags_init() {
+	if (drupal_is_front_page()) {
+
+		//Find the most recent comic
+		$query = new EntityFieldQuery();
+		$query->entityCondition('entity_type', 'node')
+  			  ->entityCondition('bundle', 'comic')
+  			  ->propertyCondition('status', 1)
+  			  ->propertyOrderBy('created', 'DESC')
+  			  ->range(0,1);
+  		$most_recent_comic = $query->execute();
+
+  		//Find the NID of the most recent comic
+  		$most_recent_nid = current( array_keys( $most_recent_comic['node'] ) );
+  		
+  		/* Find the body field of the most recent comic
+  		   @todo look for summary first, then fall back to full body if summary is missing */
+  		$body_text = db_query( 'SELECT b.body_value FROM {field_data_body} b WHERE b.entity_id = :nid', array( ":nid" => $most_recent_nid ) )->fetchField();
+
+  		/* If the most recent comic is missing a value for the 'body' field
+  		   default to the site slogan */
+  		if ( isset( $body_text ) && strlen( $body_text ) > 0 ) {
+  			$front_page_description = strip_tags( $body_text );
+  		}
+  		else {
+  			$front_page_description = strip_tags( variable_get( 'site_slogan', 'A webcomic of whales in a post-apocalyptic future.' ) );
+  		}
+
+  		//Ad a meta property "og:description" whose value is the body of the most recent comic.
+		$front_page_description = array(
+			"#type" => "html_tag",
+			"#tag" => "meta",
+			'#attributes' => array(
+				"property" => "og:description",
+				"content" => $front_page_description
+				)
+		);
+		drupal_add_html_head($front_page_description, 'whaleocalypse_front');
+	}
+}

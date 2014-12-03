@@ -1,0 +1,12 @@
+name = PHP Authentication shield
+description = Creates a general shield for the site
+core = 7.x
+
+configure = admin/config/system/shield
+
+; Information added by drupal.org packaging script on 2012-04-26
+version = "7.x-1.2"
+core = "7.x"
+project = "shield"
+datestamp = "1335436884"
+

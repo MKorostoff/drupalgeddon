@@ -1,0 +1,215 @@
+<?php
+
+/**
+ * @file
+ * Page and form to import drupal path redirects
+ */
+
+/**
+ * Implements of hook_menu().
+ */
+function path_redirect_import_menu() {
+  $items['admin/config/search/redirect/import'] = array(
+    'title' => 'Import',
+    'description' => 'Import redirects from file',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('path_redirect_import_form'),
+    'access arguments' => array('administer redirects'),
+    'file' => 'path_redirect_import.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/config/search/redirect/export'] = array(
+    'title' => 'Export',
+    'description' => 'Export redirects to a file',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('path_redirect_import_export_form'),
+    'access arguments' => array('administer redirects'),
+    'file' => 'path_redirect_import.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  return $items;
+}
+
+/**
+ * Function that processes the file
+ */
+function path_redirect_import_read_file($file, $options = array()) {
+  $options += array(
+    'delimiter' => ',',
+    'no_headers' => TRUE,
+    'override' => FALSE,
+    'status_code' => '301',
+    'language' => LANGUAGE_NONE,
+  );
+
+  if (!$f = fopen($file, 'r')) {
+    return array('success' => FALSE, 'message' => array(t('Unable to read the file')));
+  }
+  $line_no = 0;
+  $count = 0;
+  $messages = array();
+  $success = FALSE;
+
+  while ($line = fgetcsv($f, 0, $options['delimiter'])) {
+    $message = array();
+    $line_no++;
+    if ($line_no == 1 && !$options['no_headers']) {
+      drupal_set_message(t('Skipping the header row.'));
+      continue;
+    }
+
+    if (!is_array($line)) {
+      $messages[] = t('Line @line_no is invalid.', array('@line_no' => $line_no));
+      continue;
+    }
+    if (empty($line[0]) || empty($line[1])) {
+      $messages[] = t('Line @line_no contains invalid data.', array('@line_no' => $line_no));
+      continue;
+    }
+    if (empty($line[2])) {
+      $line[2] = $options['status_code'];
+    }
+    else {
+      $redirect_options = redirect_status_code_options();
+      if (!isset($redirect_options[$line[2]])) {
+        $messages[] = t('Line @line_no contains invalid status code', array('@line_no' => $line_no));
+        continue;
+      }
+    }
+    if (module_exists('locale')) {
+      if (empty($line[3])) {
+        $line[3] = $options['language'];
+      }
+      else {
+        $language_options = locale_language_list('name');
+        if (!isset($language_options[$line[3]])) {
+          $messages[] = t('Line @line_no contains invalid language code', array('@line_no' => $line_no));
+          continue;
+        }
+      }
+    }
+    $source_parts = redirect_parse_url($line[0]);
+    $data = array(
+      'line_no' => $line_no,
+      'source' => $source_parts['url'],
+      'redirect' => isset($line[1]) ? $line[1] : NULL,
+      'status_code' => $line[2],
+      'override' => $options['override'],
+      'language' => isset($line[3]) ? $line[3] : LANGUAGE_NONE,
+    );
+    if (!empty($source_parts['query'])) {
+      $data['source_options']['query'] = $source_parts['query'];
+    }
+
+    $insert_row = path_redirect_import_save_data($data);
+    if (!$insert_row['success']) {
+      $messages[] = $insert_row['message'];
+    }
+    else {
+      $count++;
+    }
+  }
+  fclose($f);
+  if ($count > 0) {
+    $messages[] = t('@count row(s) imported.', array('@count' => $count));
+    $success = TRUE;
+  }
+  return array('success' => $success, 'message' => $messages);
+}
+
+/**
+ * Function for save data from .csv file into the database
+ */
+function path_redirect_import_save_data($data) {
+  $redirect = (object) $data;
+  if ($redirect->redirect != '<front>') {
+    $parts = redirect_parse_url($redirect->redirect);
+    if (!empty($parts['query'])) {
+      $redirect->redirect_options['query'] = $parts['query'];
+    }
+    if (!empty($parts['scheme']) && $parts['scheme'] == 'https') {
+      $redirect->redirect_options['https'] = TRUE;
+    }
+
+    if (!url_is_external($parts['url'])) {
+      if (drupal_lookup_path('source', $parts['url'], $redirect->language) || drupal_valid_path($parts['url']) || is_file($parts['url'])) {
+        $redirect->redirect = drupal_get_normal_path($parts['url'], $redirect->language);
+      }
+      else {
+        $redirect->redirect = FALSE;
+      }
+    }
+    else {
+      $redirect->redirect = $parts['url'];
+    }
+  }
+
+  redirect_object_prepare($redirect);
+  redirect_hash($redirect);
+  $existing = redirect_load_by_hash($redirect->hash);
+  if ($existing && $redirect->override) {
+    $query = isset($redirect->source_options['query']) ? $redirect->source_options['query'] : array();
+    $rid = redirect_load_by_source($redirect->source, $redirect->language, $query);
+    $redirect->rid = $rid->rid;
+  }
+  if ($existing && !$redirect->override) {
+    return array(
+      'success' => FALSE,
+      'message' => filter_xss(t('Line @line_no: The source "@source" is already being redirected.', array(
+        '@line_no' => $data['line_no'],
+        '@source' => $data['source'],
+      ))),
+    );
+  }
+  elseif (empty($redirect->redirect)) {
+    return array(
+      'success' => FALSE,
+      'message' => filter_xss(t('Line @line_no: The destination "@dest" URL/path does not exist.', array(
+        '@line_no' => $data['line_no'],
+        '@dest' => $data['redirect'],
+      ))),
+    );
+  }
+  else {
+    redirect_save($redirect);
+  }
+  return array('success' => TRUE);
+}
+
+/**
+ * Generates and sends CSV file with redirects
+ */
+function path_redirect_import_export_redirects($redirects) {
+  $fp = fopen('php://output', 'w');
+  foreach ($redirects as $redirect) {
+    // Reset the cache so we won't exhaust memory.
+    $redirect = redirect_load($redirect->rid, TRUE);
+    $source = $redirect->source;
+    $redirect_url = $redirect->redirect;
+
+    if (isset($redirect->source_options['query'])) {
+      $source .= '?' . drupal_http_build_query($redirect->source_options['query']);
+    }
+    if (empty($redirect_url)) {
+      $redirect_url = '<front>';
+    }
+
+    $line = array($source, $redirect_url);
+    if ($redirect->status_code) {
+      $line[] = $redirect->status_code;
+    }
+    if ($redirect->language != LANGUAGE_NONE) {
+      if (count($line) == 2) {
+        $line[] = '';
+      }
+      $line[] = $redirect->language;
+    }
+    fputcsv($fp, $line);
+  }
+  fclose($fp);
+
+  drupal_add_http_header('Content-Type', 'text/csv');
+  drupal_add_http_header('Content-Disposition', 'attachment;filename=redirects.csv');
+
+  drupal_exit();
+}

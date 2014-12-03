@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Comic Content Type feature.
+ */
+
+include_once 'whaleocalypse_comic_content_type.features.inc';

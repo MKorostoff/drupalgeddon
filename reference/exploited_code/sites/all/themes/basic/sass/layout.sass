@@ -1,0 +1,136 @@
+@import _config.sass
+
+/* Layout
+  ------
+  Using a negative margin technique, adapted from ZEN. The page is loaded by this order:
+
+  1. Header
+  2. Content
+  3. Navigation menus
+  4. Sidebar Left
+  5. Sideabr Right
+
+/* Layout rules. (Disclaimer: do not change if you're not sure you know what you're doing.)
+#page
+  @include outer-container
+  margin-left: auto
+  margin-right: auto
+  width: $max-width
+  // Collapse to fluid width once the browser width goes below current max width.
+  @if $responsive
+    @include media(max-width $max-width)
+      width: auto
+
+#content
+  .no-sidebars &
+    // Span this div 12 columns wide.
+    @include span-columns(12)
+    @if $responsive
+      // Same logic for tablets.
+      @include media($tablet)
+        @include span-columns(8)
+      // 100% width for mobile devices.
+      @include media($mobile)
+        @include span-columns(4)
+  .one-sidebar.sidebar-second &
+    // Span this div 9 columns wide.
+    @include span-columns(9)
+    @if $responsive
+      // Same logic for tablets.
+      @include media($tablet)
+        @include span-columns(6)
+      // 100% width for mobile devices.
+      @include media($mobile)
+        @include span-columns(4)
+  .one-sidebar.sidebar-first &
+    // Span this div 7 columns wide.
+    @include span-columns(10)
+    @include shift(2)
+    @if $responsive
+      // Same logic for tablets.
+      @include media($tablet)
+        @include span-columns(5)
+        @include shift(2)
+      // 100% width for mobile devices.
+      @include media($mobile)
+        @include span-columns(4)
+        @include shift(0)
+  .two-sidebars &
+    // Span this div 7 columns wide.
+    @include span-columns(7)
+    // Shift it to the right 2 columns to accommodate for the first sidebar.
+    @include shift(2)
+    @if $responsive
+      // Same logic for tablets.
+      @include media($tablet)
+        @include span-columns(4)
+        @include shift(2)
+      // 100% width for mobile devices.
+      @include media($mobile)
+        @include span-columns(4)
+        @include shift(0)
+
+#sidebar-first
+  // Span this div 2 columns wide.
+  @include span-columns(2)
+  // Shift it to the left 9 columns to place it in the far left column.
+  @include shift(-9)
+  .sidebar-first &
+    @include shift(-12)
+  @if $responsive
+    // Similar logic for tablets.
+    @include media($tablet)
+      @include span-columns(2)
+      @include shift(-6)
+      .sidebar-first &
+        @include shift(-7)
+    // 100% width for mobile devices.
+    @include media($mobile)
+      @include span-columns(4)
+      @include shift(0)
+      .sidebar-first &
+        @include shift(0)
+
+#sidebar-second
+  // Span this div 3 columns wide.
+  @include span-columns(3)
+  @include shift(0)
+  @if $responsive
+    // Similar logic for tablets.
+    @include media($tablet)
+      @include span-columns(2)
+      @include shift(0)
+    // 100% width for mobile devices.
+    @include media($mobile)
+      @include span-columns(4)
+      @include shift(0)
+
+#footer
+  float: none
+  clear: both
+
+/* Layout Helpers
+#header,
+#footer,
+.mission,
+.breadcrumb,
+.node
+  clear: both
+
+/* Columns Inner
+  -------------
+  You can change the padding inside the columns without changing the
+  width of them by just usinbg the INNER div of each column
+.inner
+  padding: 0
+
+/* Navigation styles
+#navigation
+  li
+    list-style-type: none
+    display: inline-block
+
+// Navigation height.
+//.with-navigation
+//  #content,
+//  .sidebar

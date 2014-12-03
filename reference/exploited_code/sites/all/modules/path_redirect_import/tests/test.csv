@@ -1,0 +1,5 @@
+test1,node/1
+test2?drupal=god,http://drupal.org
+test3?redirect=true#path_redirect_import,<front>
+error
+incomplete,false_path

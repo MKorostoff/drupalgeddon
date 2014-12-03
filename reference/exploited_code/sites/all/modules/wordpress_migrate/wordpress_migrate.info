@@ -1,0 +1,25 @@
+name = "Migration from WordPress"
+description = "Imports WordPress sites into Drupal"
+package = "Development"
+core = 7.x
+dependencies[] = migrate
+dependencies[] = migrate_ui
+
+files[] = wordpress_migrate.module
+files[] = wordpress_migrate.pages.inc
+files[] = wordpress_source.inc
+files[] = wordpress.inc
+files[] = wordpress_attachment.inc
+files[] = wordpress_author.inc
+files[] = wordpress_category.inc
+files[] = wordpress_comment.inc
+files[] = wordpress_item.inc
+files[] = wordpress_tag.inc
+files[] = wordpress_wrapper.inc
+
+; Information added by drupal.org packaging script on 2012-11-29
+version = "7.x-2.2"
+core = "7.x"
+project = "wordpress_migrate"
+datestamp = "1354220402"
+

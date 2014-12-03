@@ -1,0 +1,3 @@
+name = Whaleocalypse Purge
+core = 7.x
+description = Purges entries from the varnish cache when new comments are added.  In theory the same as the purge or expire modules, except this works.
